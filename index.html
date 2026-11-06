@@ -1,0 +1,893 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>MacroTrack — Daily Nutrition Tracker</title>
+<style>
+:root{--bg:#0f1115;--card:#171a21;--card2:#1d222b;--text:#f4f6f8;--muted:#9aa4b2;--accent:#65d68a;--accent2:#5aa9ff;--danger:#ff6b6b;--border:#2a303b}
+*{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:Inter,system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}
+.container{max-width:1050px;margin:auto;padding:18px}.top{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:18px}.brand{font-size:25px;font-weight:800}.brand span{color:var(--accent)}
+.date{color:var(--muted);font-size:13px}
+.tabs{display:flex;gap:8px;overflow:auto;margin-bottom:16px}.tab{border:1px solid var(--border);background:var(--card);color:var(--muted);padding:10px 14px;border-radius:12px;cursor:pointer;white-space:nowrap}.tab.active{background:var(--accent);color:#07120b;border-color:var(--accent);font-weight:700}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}.card{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:16px}.stat b{display:block;font-size:24px;margin-top:5px}.label{color:var(--muted);font-size:12px}.section{margin:16px 0}.section h2{font-size:18px;margin:0 0 10px}
+.hidden{display:none!important}.food-results{position:absolute;z-index:20;left:0;right:0;top:76px;background:var(--card2);border:1px solid var(--border);border-radius:12px;max-height:280px;overflow:auto;display:none;box-shadow:0 12px 30px rgba(0,0,0,.35)}.food-search-status{margin-top:7px;min-height:17px}.food-result{padding:12px;border-bottom:1px solid var(--border);cursor:pointer}.food-result:last-child{border-bottom:0}.food-result:hover{background:#252c36}.food-result strong{display:block}.food-result span{font-size:11px;color:var(--muted)}.food-log-table{width:100%;overflow:hidden}
+.food-log-head,.food-log-row{
+ display:grid;
+ grid-template-columns:minmax(0,1.65fr) minmax(0,.72fr) minmax(0,.9fr) minmax(0,.78fr) minmax(0,.72fr) minmax(0,.68fr) 30px;
+ gap:4px;
+ align-items:center;
+ width:100%;
+}
+.food-log-head{padding:0 4px 7px;color:var(--muted);font-size:10px;font-weight:700}
+.food-log-row{padding:9px 4px;border-top:1px solid var(--border);font-size:10px}
+.food-log-row strong{white-space:normal;overflow:hidden;text-overflow:ellipsis;line-height:1.2}
+.food-log-row span{font-size:9px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.food-log-row .btn{justify-self:end;padding:5px 7px;font-size:12px;line-height:1}
+@media(max-width:420px){
+ .food-log-head,.food-log-row{grid-template-columns:minmax(0,1.45fr) minmax(0,.62fr) minmax(0,.78fr) minmax(0,.7fr) minmax(0,.62fr) minmax(0,.58fr) 28px;gap:3px}
+ .food-log-head{font-size:9px}
+ .food-log-row{font-size:9px;padding:8px 2px}
+ .food-log-row span{font-size:8.5px}
+ .food-log-row .btn{padding:5px 6px}
+}.progress{height:9px;background:#292f39;border-radius:99px;overflow:hidden;margin-top:10px}.bar{height:100%;background:var(--accent);width:0%;transition:.25s}.bar.over{background:var(--danger)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
+input,select{width:100%;padding:11px 12px;background:var(--card2);border:1px solid var(--border);color:var(--text);border-radius:10px;outline:none}input:focus,select:focus{border-color:var(--accent2)}
+.row{display:grid;grid-template-columns:1.5fr 1fr auto;gap:9px;align-items:end;margin-top:10px}.btn{border:0;border-radius:10px;padding:11px 14px;font-weight:700;cursor:pointer}.primary{background:var(--accent);color:#06130a}.secondary{background:var(--card2);color:var(--text);border:1px solid var(--border)}.danger{background:#3a1d21;color:#ff9b9b;border:1px solid #5b292f}
+.small{font-size:12px;color:var(--muted);line-height:1.45}canvas{width:100%;height:220px;background:var(--card2);border-radius:12px}.add-food-card{min-height:520px}.add-food-head{margin-bottom:24px}.food-form{max-width:760px}.food-search-wrap{position:relative}.food-search{font-size:18px;padding:15px 16px}.selected-food{margin-top:8px;min-height:20px;color:var(--accent);font-weight:700}.quantity-row{display:grid;grid-template-columns:1fr 180px;gap:14px;margin-top:18px}.add-food-btn{width:100%;margin-top:22px;font-size:16px;padding:15px}.add-food-message{min-height:22px;text-align:center;margin-top:10px;font-weight:700}.food-help{margin-top:28px;padding:14px;border:1px solid var(--border);border-radius:12px;background:var(--card2);color:var(--muted)}.history-heading{display:flex;justify-content:space-between;align-items:center;gap:18px;margin-bottom:20px}.history-heading h2{margin:0;flex:1}.history-control{display:flex;flex-direction:column;gap:7px;width:190px;flex:0 0 190px}.history-control label{font-size:12px;color:var(--muted)}.history-control select{width:100%;max-width:none}.chart-legend{display:flex;gap:22px;flex-wrap:wrap;margin:0 0 14px;padding:12px 14px;border:1px solid var(--border);border-radius:12px;background:var(--card2);font-size:13px;color:var(--muted)}.legend-line{display:inline-block;width:28px;height:3px;border-radius:3px;vertical-align:middle;margin-right:7px}.actual-line{background:var(--accent)}.target-line{height:0;border-top:3px dashed #5aa9ff}.chart-wrap{width:100%;overflow:hidden;border:1px solid var(--border);border-radius:14px;background:var(--card2);padding:8px 4px 4px}.chart-wrap canvas{display:block;width:100%;height:300px}.history-details{margin-top:20px}.history-date-bar{display:flex;align-items:end;gap:12px;flex-wrap:wrap;margin-bottom:18px}.history-date-field{display:flex;flex-direction:column;gap:7px;min-width:190px}.history-date-field label{font-size:12px;color:var(--muted)}.history-date-field input{font-size:15px}.selected-day-title{margin:4px 0 12px;font-size:15px;color:var(--muted)}.selected-day-log{margin-top:18px}.selected-day-log h3{margin:0 0 10px;font-size:16px}.selected-day-empty{padding:16px;border:1px dashed var(--border);border-radius:12px;color:var(--muted);background:var(--card2)}.compare-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:18px 0}.compare-card{background:var(--card2);border:1px solid var(--border);border-radius:12px;padding:14px}.compare-card .compare-title{font-size:12px;color:var(--muted)}.compare-card b{font-size:20px;display:block;margin:5px 0}.compare-card .compare-diff{font-size:12px}.history-table-wrap{overflow-x:auto}.history-table-wrap table{min-width:620px}@media(max-width:750px){.history-heading{gap:12px}.history-control{width:155px;flex-basis:155px}.history-heading h2{font-size:26px}.chart-wrap canvas{height:270px}}@media(max-width:750px){.quantity-row{grid-template-columns:1fr 120px}.compare-grid{grid-template-columns:repeat(2,1fr)}.add-food-card{min-height:0}}
+@media(max-width:750px){.container{padding:12px}.grid{grid-template-columns:repeat(2,1fr)}.two{grid-template-columns:1fr}.row{grid-template-columns:1fr 1fr}.row .btn{grid-column:1/-1}.food-grid{grid-template-columns:1fr}.brand{font-size:21px}th,td{font-size:12px;padding:8px 4px}}
+
+
+/* Compact history table on phones: keep every column visible without horizontal scrolling. */
+@media(max-width:750px){
+  .history-table-wrap{overflow-x:hidden;width:100%}
+  .history-table-wrap table{
+    min-width:0 !important;
+    width:100%;
+    table-layout:fixed;
+    border-collapse:collapse;
+    font-size:10px;
+  }
+  .history-table-wrap th,
+  .history-table-wrap td{
+    padding:7px 2px !important;
+    font-size:10px !important;
+    line-height:1.15;
+    white-space:normal;
+    word-break:break-word;
+    text-align:center;
+  }
+  .history-table-wrap th:first-child,
+  .history-table-wrap td:first-child{width:21%}
+  .history-table-wrap th:nth-child(2),
+  .history-table-wrap td:nth-child(2){width:19%}
+  .history-table-wrap th:nth-child(3),
+  .history-table-wrap td:nth-child(3){width:19%}
+  .history-table-wrap th:nth-child(4),
+  .history-table-wrap td:nth-child(4){width:21%}
+  .history-table-wrap th:nth-child(5),
+  .history-table-wrap td:nth-child(5){width:20%}
+  .history-details{margin-top:12px}
+}
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="top">
+    <div><div class="brand">Macro<span>Track</span></div><div class="date" id="today"></div></div>
+    <button class="btn secondary" onclick="openHistory()">Check History</button>
+  </div>
+
+  <div class="tabs">
+    <button class="tab active" onclick="showTab('dashboard',this)">Dashboard</button>
+    <button class="tab" onclick="showTab('add',this)">+ Add Food</button>
+    <button class="tab" onclick="showTab('targets',this)">Targets</button>
+    <button class="tab" onclick="showTab('history',this)">History</button>
+  </div>
+
+  <section id="dashboard" aria-hidden="false">
+    <div class="grid" id="stats"></div>
+    <div class="section card">
+      <h2>Today's progress</h2>
+      <div id="progress"></div>
+    </div>
+    <div class="section card">
+      <h2>Today's food</h2>
+      <div id="log"></div>
+    </div>
+  </section>
+
+  <section id="add" class="hidden" aria-hidden="true">
+    <div class="card add-food-card">
+      <div class="add-food-head">
+        <div>
+          <h2>Add a food</h2>
+          <div class="small">Search local foods and the internet food database in English, Hindi, Telugu, Tamil, Kannada, Malayalam, Bengali, Marathi or common spellings. Type any food and tap the exact result to select it.</div>
+        </div>
+      </div>
+
+      <div class="food-form">
+        <div class="food-search-wrap">
+          <label class="small">Food name</label>
+          <input id="foodSearch" class="food-search" type="text" autocomplete="off"
+            placeholder="Type: peanut, phalli, मूंगफली, పల్లీ..."
+            oninput="searchFoods()" onfocus="searchFoods()">
+          <div id="foodResults" class="food-results"></div><div id="foodSearchStatus" class="small food-search-status"></div>
+          <input id="foodSelect" type="hidden">
+          <div id="selectedFood" class="selected-food"></div>
+        </div>
+
+        <div class="quantity-row">
+          <div class="quantity-field">
+            <label class="small">Quantity</label>
+            <input id="qty" type="number" value="100" min="0.1" step="0.1">
+          </div>
+          <div class="unit-field">
+            <label class="small">Unit</label>
+            <select id="unit">
+              <option value="g">g</option>
+              <option value="ml">ml</option>
+              <option value="piece">piece</option>
+            </select>
+          </div>
+        </div>
+
+        <button class="btn primary add-food-btn" onclick="addFood()">Add to today</button>
+        <div id="addFoodMessage" class="add-food-message" aria-live="polite"></div>
+      </div>
+
+      <div class="food-help">
+        <b>Example:</b> type <b>phalli</b> → select <b>Roasted peanuts</b> → enter quantity → <b>Add to today</b>.
+      </div>
+    </div>
+  </section>
+
+  <section id="targets" class="hidden" aria-hidden="true">
+    <div class="card">
+      <h2>Today's targets</h2>
+      <div class="small">Set the targets you want to reach. They are saved on this device.</div>
+      <div class="grid" style="margin-top:12px">
+        <div><label class="small">Calories (kcal)</label><input id="tCal" type="number" readonly></div>
+        <div><label class="small">Protein (g)</label><input id="tPro" type="number" readonly></div>
+        <div><label class="small">Carbs (g)</label><input id="tCarb" type="number" readonly></div>
+        <div><label class="small">Fat (g)</label><input id="tFat" type="number" readonly></div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-top:14px">
+        <button id="editTargetsBtn" class="btn secondary" onclick="editTargets()">Edit</button>
+        <button id="saveTargetsBtn" class="btn primary" onclick="saveTargets()">Save targets</button>
+        <span id="targetStatus" class="pill" style="display:none">Saved ✓</span>
+      </div>
+    </div>
+  </section>
+
+  <section id="history" class="hidden" aria-hidden="true">
+    <div class="card">
+      <div class="history-date-bar">
+        <div class="history-date-field">
+          <label for="historyDate">Select date (day / month / year)</label>
+          <input id="historyDate" type="date" onchange="renderHistory()">
+        </div>
+        <div class="history-control">
+          <label for="historyMetric">Compare</label>
+          <select id="historyMetric" onchange="renderHistory()">
+            <option value="cal">Calories</option>
+            <option value="pro">Protein</option>
+            <option value="carb">Carbohydrates</option>
+            <option value="fat">Fat</option>
+          </select>
+        </div>
+      </div>
+      <h2>History</h2>
+      <div id="selectedDayTitle" class="selected-day-title"></div>
+      <div class="chart-legend">
+        <span><i class="legend-line actual-line"></i> Actual intake</span>
+        <span><i class="legend-line target-line"></i> Daily target</span>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="chart" width="900" height="300"></canvas>
+      </div>
+      <div id="historyTable" class="history-details"></div>
+      <div id="selectedDayLog" class="selected-day-log"></div>
+    </div>
+  </section>
+</div>
+
+<script>
+const foods = {
+ "Cooked white rice":{"cal":130,"pro":2.7,"carb":28,"fat":0.3},
+ "Brown rice, cooked":{"cal":123,"pro":2.7,"carb":25.6,"fat":1},
+ "Basmati rice, cooked":{"cal":130,"pro":2.7,"carb":28,"fat":0.3},
+ "Poha":{"cal":158,"pro":2.8,"carb":27,"fat":4.5},
+ "Upma":{"cal":170,"pro":3.5,"carb":25,"fat":6},
+ "Idli":{"cal":146,"pro":4.5,"carb":28,"fat":0.7,"piece":{"cal":58,"pro":1.8,"carb":11,"fat":0.3}},
+ "Dosa":{"cal":168,"pro":4.5,"carb":28,"fat":4,"piece":{"cal":135,"pro":3.6,"carb":22.5,"fat":3.2}},
+ "Masala dosa":{"cal":190,"pro":4,"carb":30,"fat":6,"piece":{"cal":285,"pro":6,"carb":45,"fat":9}},
+ "Chapati/Roti":{"cal":297,"pro":10,"carb":50,"fat":7,"piece":{"cal":100,"pro":3.3,"carb":17,"fat":2.4}},
+ "Paratha":{"cal":300,"pro":7,"carb":45,"fat":10,"piece":{"cal":180,"pro":4.2,"carb":27,"fat":6}},
+ "Puri":{"cal":330,"pro":6,"carb":45,"fat":14,"piece":{"cal":100,"pro":1.8,"carb":14,"fat":4.2}},
+ "Pani puri":{"cal":180,"pro":3,"carb":30,"fat":6,"piece":{"cal":35,"pro":0.6,"carb":5.8,"fat":1.2}},
+ "Samosa":{"cal":260,"pro":5,"carb":32,"fat":12,"piece":{"cal":130,"pro":2.5,"carb":16,"fat":6}},
+ "Vada":{"cal":290,"pro":8,"carb":32,"fat":15,"piece":{"cal":130,"pro":3.6,"carb":14,"fat":6.8}},
+ "Pakora":{"cal":280,"pro":6,"carb":30,"fat":15},
+ "Bread":{"cal":265,"pro":9,"carb":49,"fat":4,"piece":{"cal":75,"pro":2.5,"carb":14,"fat":1.1}},
+ "Milk bread":{"cal":265,"pro":9,"carb":49,"fat":4,"piece":{"cal":75,"pro":2.5,"carb":14,"fat":1.1}},
+ "Oats":{"cal":389,"pro":16.9,"carb":66.3,"fat":6.9},
+ "Saffola oats":{"cal":389,"pro":16.9,"carb":66.3,"fat":6.9},
+ "Cornflakes":{"cal":357,"pro":7.5,"carb":84,"fat":0.4},
+ "Wheat flour":{"cal":340,"pro":13,"carb":72,"fat":2.5},
+ "Besan":{"cal":387,"pro":22,"carb":58,"fat":6.7},
+ "Rice flour":{"cal":366,"pro":6,"carb":80,"fat":1},
+ "Potato, boiled":{"cal":87,"pro":1.9,"carb":20,"fat":0.1},
+ "Sweet potato, boiled":{"cal":76,"pro":1.4,"carb":17.7,"fat":0.1},
+ "Roasted peanuts":{"cal":567,"pro":25.8,"carb":16.1,"fat":49.2},
+ "Peanuts":{"cal":567,"pro":25.8,"carb":16.1,"fat":49.2},
+ "Peanut butter":{"cal":588,"pro":25,"carb":20,"fat":50},
+ "Almonds":{"cal":579,"pro":21.2,"carb":21.6,"fat":49.9},
+ "Cashews":{"cal":553,"pro":18.2,"carb":30.2,"fat":43.9},
+ "Walnuts":{"cal":654,"pro":15.2,"carb":13.7,"fat":65.2},
+ "Raisins":{"cal":299,"pro":3.1,"carb":79.2,"fat":0.5},
+ "Boiled chana":{"cal":164,"pro":8.9,"carb":27.4,"fat":2.6},
+ "Black chana, cooked":{"cal":164,"pro":8.9,"carb":27.4,"fat":2.6},
+ "Rajma, cooked":{"cal":127,"pro":8.7,"carb":22.8,"fat":0.5},
+ "Chole, cooked":{"cal":164,"pro":8.9,"carb":27.4,"fat":2.6},
+ "Green peas, cooked":{"cal":84,"pro":5.4,"carb":15.6,"fat":0.4},
+ "Moong dal, cooked":{"cal":105,"pro":7,"carb":19,"fat":0.4},
+ "Toor dal, cooked":{"cal":120,"pro":6.8,"carb":21,"fat":2},
+ "Masoor dal, cooked":{"cal":116,"pro":9,"carb":20,"fat":0.4},
+ "Dal, cooked":{"cal":116,"pro":7,"carb":20,"fat":1},
+ "Soya chunks, dry":{"cal":345,"pro":52,"carb":33,"fat":0.5},
+ "Tofu":{"cal":76,"pro":8,"carb":1.9,"fat":4.8},
+ "Paneer":{"cal":265,"pro":18.3,"carb":6.1,"fat":20.8},
+ "Milk (whole)":{"cal":61,"pro":3.2,"carb":4.8,"fat":3.3},
+ "Milk (toned)":{"cal":58,"pro":3,"carb":4.7,"fat":3},
+ "Curd":{"cal":61,"pro":3.5,"carb":4.7,"fat":3.3},
+ "Greek yogurt":{"cal":97,"pro":9,"carb":3.9,"fat":5},
+ "Buttermilk":{"cal":40,"pro":3.3,"carb":4.8,"fat":0.9},
+ "Boiled egg":{"cal":155,"pro":12.6,"carb":1.1,"fat":10.6,"piece":{"cal":78,"pro":6.3,"carb":0.6,"fat":5.3}},
+ "Egg white":{"cal":52,"pro":10.9,"carb":0.7,"fat":0.2,"piece":{"cal":17,"pro":3.6,"carb":0.2,"fat":0.1}},
+ "Chicken breast, cooked":{"cal":165,"pro":31,"carb":0,"fat":3.6},
+ "Chicken curry":{"cal":190,"pro":16,"carb":6,"fat":11},
+ "Chicken biryani":{"cal":180,"pro":8,"carb":24,"fat":6},
+ "Mutton, cooked":{"cal":250,"pro":25,"carb":0,"fat":16},
+ "Fish, cooked":{"cal":180,"pro":25,"carb":0,"fat":8},
+ "Prawns, cooked":{"cal":99,"pro":24,"carb":0.2,"fat":0.3},
+ "Banana":{"cal":89,"pro":1.1,"carb":22.8,"fat":0.3,"piece":{"cal":105,"pro":1.3,"carb":27,"fat":0.4}},
+ "Apple":{"cal":52,"pro":0.3,"carb":14,"fat":0.2,"piece":{"cal":95,"pro":0.5,"carb":25,"fat":0.3}},
+ "Orange":{"cal":47,"pro":0.9,"carb":11.8,"fat":0.1,"piece":{"cal":62,"pro":1.2,"carb":15.4,"fat":0.2}},
+ "Mango":{"cal":60,"pro":0.8,"carb":15,"fat":0.4},
+ "Guava":{"cal":68,"pro":2.6,"carb":14.3,"fat":1},
+ "Papaya":{"cal":43,"pro":0.5,"carb":11,"fat":0.3},
+ "Watermelon":{"cal":30,"pro":0.6,"carb":7.6,"fat":0.2},
+ "Pomegranate":{"cal":83,"pro":1.7,"carb":18.7,"fat":1.2},
+ "Grapes":{"cal":69,"pro":0.7,"carb":18.1,"fat":0.2},
+ "Pineapple":{"cal":50,"pro":0.5,"carb":13.1,"fat":0.1},
+ "Tomato":{"cal":18,"pro":0.9,"carb":3.9,"fat":0.2},
+ "Cucumber":{"cal":15,"pro":0.7,"carb":3.6,"fat":0.1},
+ "Carrot":{"cal":41,"pro":0.9,"carb":9.6,"fat":0.2},
+ "Spinach":{"cal":23,"pro":2.9,"carb":3.6,"fat":0.4},
+ "Mixed vegetables":{"cal":65,"pro":2.5,"carb":12,"fat":1},
+ "Broccoli":{"cal":35,"pro":2.4,"carb":7.2,"fat":0.4},
+ "Cauliflower":{"cal":25,"pro":1.9,"carb":5,"fat":0.3},
+ "Onion":{"cal":40,"pro":1.1,"carb":9.3,"fat":0.1},
+ "Capsicum":{"cal":31,"pro":1,"carb":6,"fat":0.3},
+ "Cooking oil":{"cal":884,"pro":0,"carb":0,"fat":100},
+ "Ghee":{"cal":900,"pro":0,"carb":0,"fat":100},
+ "Sugar":{"cal":387,"pro":0,"carb":100,"fat":0},
+ "Honey":{"cal":304,"pro":0.3,"carb":82.4,"fat":0},
+ "Dark chocolate":{"cal":598,"pro":7.8,"carb":46,"fat":43},
+ "Milk chocolate":{"cal":535,"pro":7.6,"carb":59,"fat":30},
+ "Biscuits":{"cal":480,"pro":6,"carb":68,"fat":20},
+ "Instant noodles":{"cal":440,"pro":9,"carb":60,"fat":18},
+ "Pasta, cooked":{"cal":158,"pro":5.8,"carb":30.9,"fat":0.9},
+ "Pizza":{"cal":266,"pro":11,"carb":33,"fat":10},
+ "Burger":{"cal":295,"pro":13,"carb":30,"fat":14},
+ "French fries":{"cal":312,"pro":3.4,"carb":41,"fat":15},
+ "Lassi":{"cal":75,"pro":3.3,"carb":11,"fat":2},
+ "Tea with milk":{"cal":50,"pro":2,"carb":7,"fat":1.5},
+ "Coffee with milk":{"cal":45,"pro":2,"carb":5,"fat":1.5},
+
+ /* Common Indian curries & cooked dishes — approximate values per 100 g.
+    Recipes vary by oil, coconut, cream, etc.; these are practical estimates. */
+ "Tomato curry":{"cal":95,"pro":2.2,"carb":9,"fat":5.2},
+ "Tomato dal":{"cal":125,"pro":5.5,"carb":17,"fat":3.8},
+ "Dal fry":{"cal":140,"pro":6.2,"carb":18,"fat":4.8},
+ "Dal tadka":{"cal":145,"pro":6.5,"carb":18,"fat":5.2},
+ "Plain dal":{"cal":115,"pro":6.5,"carb":17,"fat":2.5},
+ "Sambar":{"cal":75,"pro":3.5,"carb":11,"fat":2},
+ "Rasam":{"cal":35,"pro":1.3,"carb":5,"fat":1},
+ "Aloo curry":{"cal":120,"pro":2.5,"carb":17,"fat":4.5},
+ "Aloo tomato curry":{"cal":115,"pro":2.5,"carb":16,"fat":4.5},
+ "Aloo matar":{"cal":115,"pro":3.5,"carb":16,"fat":4},
+ "Aloo gobi":{"cal":105,"pro":3,"carb":13,"fat":4.5},
+ "Bhindi masala":{"cal":115,"pro":2.5,"carb":10,"fat":7},
+ "Baingan bharta":{"cal":105,"pro":2,"carb":9,"fat":6.5},
+ "Palak curry":{"cal":80,"pro":3,"carb":7,"fat":4},
+ "Palak paneer":{"cal":155,"pro":8,"carb":7,"fat":10},
+ "Matar paneer":{"cal":160,"pro":8,"carb":9,"fat":10},
+ "Paneer butter masala":{"cal":210,"pro":7,"carb":10,"fat":16},
+ "Chana masala":{"cal":150,"pro":6.5,"carb":19,"fat":5.5},
+ "Rajma curry":{"cal":135,"pro":7,"carb":19,"fat":3.5},
+ "Chole curry":{"cal":150,"pro":6.5,"carb":20,"fat":5},
+ "Egg curry":{"cal":150,"pro":8,"carb":6,"fat":10},
+ "Chicken curry":{"cal":190,"pro":16,"carb":6,"fat":11},
+ "Chicken tikka masala":{"cal":180,"pro":15,"carb":8,"fat":9},
+ "Butter chicken":{"cal":220,"pro":15,"carb":7,"fat":15},
+ "Fish curry":{"cal":145,"pro":14,"carb":5,"fat":8},
+ "Mutton curry":{"cal":210,"pro":15,"carb":6,"fat":14},
+ "Keema curry":{"cal":215,"pro":15,"carb":5,"fat":15},
+ "Mixed vegetable curry":{"cal":105,"pro":3,"carb":12,"fat":5},
+ "Vegetable kurma":{"cal":145,"pro":3,"carb":10,"fat":10},
+ "Mushroom curry":{"cal":120,"pro":4,"carb":7,"fat":8},
+ "Cabbage curry":{"cal":85,"pro":2,"carb":9,"fat":4.5},
+ "Beans curry":{"cal":90,"pro":3,"carb":10,"fat":4.5},
+ "Carrot beans curry":{"cal":90,"pro":2,"carb":10,"fat":4.5},
+ "Bottle gourd curry":{"cal":65,"pro":2,"carb":7,"fat":3},
+ "Pumpkin curry":{"cal":80,"pro":1.5,"carb":10,"fat":3.5},
+ "Drumstick curry":{"cal":80,"pro":2,"carb":9,"fat":4},
+ "Karela curry":{"cal":90,"pro":2,"carb":8,"fat":5},
+ "Methi curry":{"cal":85,"pro":3,"carb":7,"fat":4.5},
+ "Mushroom masala":{"cal":125,"pro":4,"carb":8,"fat":8},
+ "Kadai paneer":{"cal":175,"pro":9,"carb":8,"fat":12},
+ "Chana dal curry":{"cal":130,"pro":6.5,"carb":18,"fat":3.5},
+ "Moong dal curry":{"cal":120,"pro":6.5,"carb":18,"fat":2.5},
+ "Masoor dal curry":{"cal":125,"pro":7,"carb":18,"fat":2.8},
+ "Toor dal curry":{"cal":125,"pro":6.5,"carb":18,"fat":3},
+ "Coconut curry":{"cal":155,"pro":2,"carb":8,"fat":13},
+ "Kadhi":{"cal":105,"pro":4,"carb":8,"fat":6},
+ "Avial":{"cal":105,"pro":2,"carb":8,"fat":7},
+ "Poriyal":{"cal":90,"pro":2,"carb":8,"fat":5.5},
+ "Vegetable stir fry":{"cal":90,"pro":2.5,"carb":10,"fat":4.5}
+};
+const aliases = {"Cooked white rice":["rice","chawal","chaawal","bhaat","annam","బియ్యం","అన్నం","चावल","arisi","சாதம்","ಅನ್ನ","ভাত"],"Roasted peanuts":["peanut","peanuts","groundnut","groundnuts","moongfali","mungfali","moong phali","phalli","fali","shengdana","singdana","verkadalai","palli","pallilu","verusenaga","వేరుశెనగ","పల్లీ","పల్లీలు","मूंगफली","शेंगदाणे","கடலை","ಕಡಲೆಕಾಯಿ","നിലക്കടല","বাদাম"],"Peanuts":["peanut","groundnut","moongfali","phalli","palli","వేరుశెనగ","పల్లీ","मूंगफली"],"Boiled chana":["chana","chickpea","kabuli chana","kala chana","chole","sanaga","senagalu","శనగ","चना","கொண்டைக்கடலை","ಕಡಲೆಕಾಳು","കടല","ছোলা"],"Black chana, cooked":["black chana","kala chana","కల శనగ","काला चना"],"Rajma, cooked":["rajma","kidney beans","రాజ్మా","राजमा"],"Chole, cooked":["chole","chickpeas","ఛోలే","छोले"],"Boiled egg":["egg","eggs","anda","ande","guddu","గుడ్డు","గుడ్లు","अंडा","அண்டை","முட்டை","ಮೊಟ್ಟೆ","മുട്ട","ডিম"],"Milk (whole)":["milk","whole milk","doodh","paalu","పాలు","दूध","பால்","ಹಾಲು","പാൽ","দুধ"],"Curd":["curd","dahi","yogurt","yoghurt","perugu","mosaru","thayir","పెరుగు","दही","தயிர்","ಮೊಸರು","തൈര്","দই"],"Banana":["banana","kela","kele","arati","arati pandu","అరటి","అరటిపండు","केला","வாழைப்பழம்","ಬಾಳೆಹಣ್ಣು","പഴം","কলা"],"Apple":["apple","seb","सेब","ఆపిల్","ஆப்பிள்","ಸೇಬು","ആപ്പിൾ","আপেল"],"Orange":["orange","santra","narangi","సంత్రా","నారింజ","संतरा","ஆரஞ்சு","ಕಿತ್ತಳೆ","ഓറഞ്ച്","কমলা"],"Mango":["mango","aam","mamidi","మామిడి","आम","மாம்பழம்","ಮಾವು","മാങ്ങ","আম"],"Tomato":["tomato","tamatar","టమాటా","टमाटर","தக்காளி","ಟೊಮ್ಯಾಟೊ","തക്കാളി","টমেটো"],"Potato, boiled":["potato","aloo","alu","బంగాళాదుంప","ఆలూ","आलू","உருளைக்கிழங்கு","ಆಲೂಗಡ್ಡೆ","ഉരുളക്കിഴങ്ങ്"],"Chapati/Roti":["roti","chapati","chapathi","phulka","చపాతీ","రొట్టి","रोटी","சப்பாத்தி","ರೊಟ್ಟಿ","ചപ്പാത്തി","রুটি"],"Pani puri":["pani puri","panipuri","golgappa","gupchup","puchka","పానీ పూరి","पानी पुरी","गोलगप्पा","பானி பூரி","ಪಾನಿ ಪುರಿ"],"Samosa":["samosa","సమోసా","समोसा","சமோசா","ಸಮೋಸ","സമോസ"],"Idli":["idli","idly","ఇడ్లీ","इडली","இட்லி","ಇಡ್ಲಿ","ഇഡലി","ইডলি"],"Dosa":["dosa","dosai","dose","దోస","దోసె","डोसा","தோசை","ದೋಸೆ","ദോശ","ডোসা"],"Poha":["poha","pohe","aval","avalakki","atukulu","అటుకులు","పోహా","पोहा","அவல்","ಅವಲಕ್ಕಿ"],"Upma":["upma","uppittu","uppumavu","ఉప్మా","उपमा","உப்புமா","ಉಪ್ಪಿಟ್ಟು","ഉപ്പുമാവ്"],"Paratha":["paratha","parotta","పరాటా","पराठा","பரோட்டா","ಪರೋಟ","പറോട്ട"],"Vada":["vada","vadai","medu vada","వడ","वड़ा","வடை","ವಡೆ","വട"],"Pakora":["pakora","pakoda","bhajiya","భజ్జీ","పకోడీ","पकौड़ा","பக்கோடா","ಪಕೋಡ","പക്കോഡ"],"Oats":["oats","oatmeal","oat","ఓట్స్","वोट्स","ஓட்ஸ்","ಓಟ್ಸ್","ഓട്സ്","ওটস"],"Saffola oats":["saffola","saffola oats"],"Peanut butter":["peanut butter","groundnut butter","pb","పీనట్ బట్టర్","मूंगफली मक्खन","கடலை வெண்ணெய்"],"Almonds":["almond","almonds","badam","బాదం","बादाम","பாதாம்","ಬಾದಾಮಿ","ബദാം"],"Cashews":["cashew","cashews","kaju","కాజూ","काजू","முந்திரி","ಗೋಡಂಬಿ","കശുവണ്ടി"],"Walnuts":["walnut","walnuts","akhrot","అక్రోటు","अखरोट"],"Dal, cooked":["dal","daal","pappu","paruppu","పప్పు","दाल","பருப்பு","ಬೇಳೆ","പരിപ്പ്","ডাল"],"Moong dal, cooked":["moong dal","pesara pappu","పెసర పప్పు","मूंग दाल"],"Toor dal, cooked":["toor dal","arhar dal","kandi pappu","కందిపప్పు","तूर दाल"],"Masoor dal, cooked":["masoor dal","masoor","మసూర్ దాల్","मसूर दाल"],"Soya chunks, dry":["soya","soy","soya chunks","soy chunks","meal maker","nutrela","సోయా","सोया चंक्स","சோயா","ಸೋಯಾ","സോയ"],"Paneer":["paneer","cottage cheese","పనీర్","पनीर","பனீர்","ಪನೀರ್","പനീർ"],"Tofu":["tofu","టోఫు","टोफू","தோஃபு"],"Chicken breast, cooked":["chicken","chicken breast","cooked chicken","murgh","murgi","చికెన్","मुर्गी","கோழி","ಕೋಳಿ","കോഴി","মুরগি"],"Chicken biryani":["chicken biryani","చికెన్ బిర్యానీ","चिकन बिरयानी"],"Mutton, cooked":["mutton","goat meat","మటన్","मटन","ஆட்டிறைச்சி","ಮಟನ್","മട്ടൺ"],"Fish, cooked":["fish","machli","chepa","meen","చేప","मछली","மீன்","ಮೀನು","മീൻ","মাছ"],"Prawns, cooked":["prawn","prawns","shrimp","royyala","రొయ్యలు","झींगा","இறால்","ಸೀಗಡಿ","ചെമ്മീൻ"],"Carrot":["carrot","gajar","క్యారెట్","गाजर","கேரட்","ಕ್ಯಾರೆಟ್","കാരറ്റ്","গাজর"],"Cucumber":["cucumber","kheera","kakdi","dosakaya","దోసకాయ","खीरा","வெள்ளரிக்காய்","ಸೌತೆಕಾಯಿ","വെള്ളരിക്ക","শসা"],"Spinach":["spinach","palak","palakura","పాలకూర","पालक","கீரை","ಪಾಲಕ್","ചീര","পালং"],"Onion":["onion","pyaz","ullipaya","vengayam","ఉల్లిపాయ","प्याज","வெங்காயம்","ಈರುಳ್ಳಿ","സവാള","পেঁয়াজ"],"Capsicum":["capsicum","bell pepper","shimla mirch","బెల్ పెప్పర్","షిమ్లా మిర్చి","शिमला मिर्च","குடைமிளகாய்","ಕ್ಯಾಪ್ಸಿಕಂ","കാപ്സിക്കം"],"Cooking oil":["oil","cooking oil","sunflower oil","groundnut oil","నూనె","तेल","எண்ணெய்","ಎಣ್ಣೆ","എണ്ണ","তেল"],"Ghee":["ghee","clarified butter","నెయ్యి","घी","நெய்","ತುಪ್ಪ","നെയ്യ്","ঘি"],"Sugar":["sugar","cheeni","sakkarai","panchadara","చక్కెర","चीनी","சர்க்கரை","ಸಕ್ಕರೆ","പഞ്ചസാര","চিনি"],"Honey":["honey","madhu","tene","తేనె","शहद","தேன்","ಜೇನು","തേൻ","মধু"],"Instant noodles":["noodles","instant noodles","maggi","నూడుల్స్","नूडल्स","நூடுல்ஸ்","ನೂಡಲ್ಸ್","നൂഡിൽസ്","নুডলস"],"Pasta, cooked":["pasta","cooked pasta","పాస్తా","पास्ता","பாஸ்தா","ಪಾಸ್ತಾ","പാസ്ത","পাস্তা"],"Pizza":["pizza","పిజ్జా","पिज्जा","பீட்சா","ಪಿಜ್ಜಾ","പിസ്സ","পিজ্জা"],"Burger":["burger","hamburger","బర్గర్","बर्गर","பர்கர்","ಬರ್ಗರ್","ബർഗർ","বার্গার"],"Lassi":["lassi","sweet lassi","salt lassi","లస్సీ","लस्सी","லஸ்ஸி","ಲಸ್ಸಿ","ലസ്സി","লস্যি"],"Tea with milk":["tea","chai","milk tea","చాయ్","టీ","चाय","தேநீர்","ಚಹಾ","ചായ","চা"],"Coffee with milk":["coffee","milk coffee","కాఫీ","कॉफी","காபி","ಕಾಫಿ","കാപ്പി","কফি"],
+"Tomato curry":["tomato curry","tomato sabzi","tomato koora","tomato kura","టమాటా కూర","టొమాటో కర్రీ","टमाटर की सब्जी","தக்காளி குழம்பு","ಟೊಮ್ಯಾಟೊ ಸಾರು","തക്കാളി കറി","টমেটো তরকারি"],
+"Tomato dal":["tomato dal","tomato pappu","tomato daal","టమాటా పప్పు","टमाटर दाल","தக்காளி பருப்பு","ಟೊಮ್ಯಾಟೊ ದಾಲ್"],
+"Dal fry":["dal fry","daal fry","pappu fry","పప్పు ఫ్రై","दाल फ्राय"],
+"Dal tadka":["dal tadka","daal tadka","tadka dal","తడ్కా పప్పు","दाल तड़का"],
+"Plain dal":["plain dal","dal","daal","simple dal","సాదా పప్పు","सादी दाल"],
+"Sambar":["sambar","sambhar","సాంబార్","सांभर","சாம்பார்","ಸಾಂಬಾರ್","സാമ്പാർ","সাম্বার"],
+"Rasam":["rasam","charu","చారు","రసం","रसम","ரசம்","ರಸಂ","രസം"],
+"Aloo curry":["aloo curry","alu curry","potato curry","potato sabzi","aloo sabzi","ఆలూ కూర","ఆలుగడ్డ కూర","आलू की सब्जी","உருளைக்கிழங்கு குழம்பு","ಆಲೂ ಪಲ್ಯ","ഉരുളക്കിഴങ്ങ് കറി"],
+"Aloo tomato curry":["aloo tomato","potato tomato curry","ఆలూ టమాటా కూర","आलू टमाटर"],
+"Aloo matar":["aloo matar","alu matar","potato peas","ఆలూ మటర్","आलू मटर"],
+"Aloo gobi":["aloo gobi","potato cauliflower","ఆలూ గోబీ","आलू गोभी"],
+"Bhindi masala":["bhindi masala","okra curry","ladies finger curry","bendakaya curry","bendakaya","భెండీ","బెండకాయ కూర","भिंडी मसाला","வெண்டைக்காய்","ಬೆಂಡೆಕಾಯಿ","വെണ്ടയ്ക്ക"],
+"Baingan bharta":["baingan bharta","brinjal bharta","eggplant bharta","vankaya","వంకాయ కూర","वांग्याचे भरीत","बैंगन भर्ता"],
+"Palak curry":["palak curry","spinach curry","palakura curry","పాలకూర కూర","पालक की सब्जी","சிறுகீரை குழம்பு","ചീര കറി"],
+"Palak paneer":["palak paneer","spinach paneer","పాలక్ పనీర్","पालक पनीर"],
+"Matar paneer":["matar paneer","peas paneer","పనీర్ బటానీ","मटर पनीर"],
+"Paneer butter masala":["paneer butter masala","butter paneer","పనీర్ బటర్ మసాలా","पनीर बटर मसाला"],
+"Chana masala":["chana masala","chole masala","chickpea masala","శనగ మసాలా","चना मसाला","சுண்டல் மசாலா"],
+"Rajma curry":["rajma curry","rajma masala","kidney bean curry","రాజ్మా కూర","राजमा मसाला"],
+"Chole curry":["chole curry","chole","chana curry","కాబులీ శనగ కూర","छोले"],
+"Egg curry":["egg curry","anda curry","egg masala","గుడ్డు కూర","अंडा करी","முட்டை குழம்பு","ಮೊಟ್ಟೆ ಕರಿ"],
+"Chicken tikka masala":["chicken tikka masala","चिकन टिक्का मसाला","చికెన్ టిక్కా మసాలా"],
+"Butter chicken":["butter chicken","murgh makhani","బటర్ చికెన్","बटर चिकन"],
+"Fish curry":["fish curry","meen curry","chepa pulusu","fish pulusu","చేప పులుసు","చేప కూర","मछली करी","மீன் குழம்பு","മീൻ കറി"],
+"Mutton curry":["mutton curry","mutton masala","goat curry","మటన్ కూర","मटन करी"],
+"Keema curry":["keema curry","keema","minced meat curry","కీమా","कीमा"],
+"Mixed vegetable curry":["mixed veg curry","mixed vegetable curry","mix veg","మిక్స్ వెజ్ కూర","मिक्स वेज"],
+"Vegetable kurma":["veg kurma","vegetable korma","kurma","కూర్మా","कुर्मा"],
+"Mushroom curry":["mushroom curry","mushroom masala","పుట్టగొడుగుల కూర","मशरूम करी"],
+"Cabbage curry":["cabbage curry","cabbage sabzi","cabbage koora","క్యాబేజీ కూర","पत्तागोभी की सब्जी"],
+"Beans curry":["beans curry","green beans curry","beans sabzi","బీన్స్ కూర","फ्रेंच बीन्स सब्जी"],
+"Carrot beans curry":["carrot beans curry","carrot beans","క్యారెట్ బీన్స్ కూర"],
+"Bottle gourd curry":["bottle gourd curry","lauki curry","sorakaya curry","anapakaya curry","సొరకాయ కూర","लौकी की सब्जी"],
+"Pumpkin curry":["pumpkin curry","gummadikaya curry","kaddu sabzi","గుమ్మడికాయ కూర","कद्दू की सब्जी"],
+"Drumstick curry":["drumstick curry","moringa curry","munagakaya curry","మునగకాయ కూర","सहजन की सब्जी"],
+"Karela curry":["karela curry","bitter gourd curry","kakarakaya curry","కాకరకాయ కూర","करेला सब्जी"],
+"Methi curry":["methi curry","fenugreek curry","menthi kura","మెంతికూర కూర","मेथी की सब्जी"],
+"Mushroom masala":["mushroom masala","mushroom gravy","పుట్టగొడుగు మసాలా"],
+"Kadai paneer":["kadai paneer","karahi paneer","కడాయి పనీర్","कड़ाई पनीर"],
+"Chana dal curry":["chana dal curry","senaga pappu","శెనగ పప్పు","चना दाल"],
+"Moong dal curry":["moong dal curry","pesara pappu","పెసర పప్పు","मूंग दाल"],
+"Masoor dal curry":["masoor dal curry","masoor dal","మసూర్ పప్పు","मसूर दाल"],
+"Toor dal curry":["toor dal curry","kandi pappu","కందిపప్పు","तूर दाल"],
+"Coconut curry":["coconut curry","coconut gravy","కొబ్బరి కూర","नारियल करी"],
+"Kadhi":["kadhi","kadhi pakora","కడీ","कढ़ी"],
+"Avial":["avial","aviyal","అవియల్","अवियल"],
+"Poriyal":["poriyal","vegetable poriyal","பொரியல்","പൊരിയൽ"],
+"Vegetable stir fry":["vegetable stir fry","veg stir fry","కూరగాయల వేపుడు","सब्जी फ्राय"]};
+
+const normalized = s => String(s || "")
+ .toLowerCase()
+ .normalize("NFKD")
+ .replace(/[\u0300-\u036f]/g,"")
+ .replace(/[^\p{L}\p{N}]+/gu," ")
+ .trim();
+
+const foodSearchIndex = {};
+Object.keys(foods).forEach(name => {
+  foodSearchIndex[name] = [name, ...(aliases[name] || [])].map(normalized);
+});
+
+let state=JSON.parse(localStorage.getItem('macrotrack_state')||'null')||{
+ targets:{cal:3200,pro:150,carb:420,fat:90}, days:{}, dayTargets:{}
+};
+const key=()=>new Date().toISOString().slice(0,10);
+if(!state.days) state.days={};
+if(!state.dayTargets) state.dayTargets={};
+if(!state.days[key()]) state.days[key()] = [];
+if(!state.dayTargets[key()]) state.dayTargets[key()] = {...state.targets};
+function save(){localStorage.setItem('macrotrack_state',JSON.stringify(state))}
+function cloneTarget(t){
+ return {
+   cal:Number(t?.cal)||0,
+   pro:Number(t?.pro)||0,
+   carb:Number(t?.carb)||0,
+   fat:Number(t?.fat)||0
+ };
+}
+function getTargetForDate(date){
+ const saved=state.dayTargets?.[date];
+ if(saved) return cloneTarget(saved);
+ // The current date always has a snapshot created when the app/day starts.
+ if(date===key()){
+   state.dayTargets[date]=cloneTarget(state.targets);
+   save();
+   return cloneTarget(state.dayTargets[date]);
+ }
+ // Old data may have been created before per-day targets were added.
+ // Do not invent a historical target; mark it as unavailable.
+ return null;
+}
+
+function goToAddFood(){
+ const tab=[...document.querySelectorAll('.tab')].find(x=>x.textContent.includes('Add Food'));
+ if(tab) showTab('add',tab);
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function showTab(id,el){
+ document.querySelectorAll('section').forEach(x=>{
+   const visible=x.id===id;
+   x.classList.toggle('hidden',!visible);
+   x.setAttribute('aria-hidden',visible?'false':'true');
+ });
+ document.querySelectorAll('.tab').forEach(x=>x.classList.remove('active'));
+ el.classList.add('active');
+ if(id==='dashboard')render();
+ if(id==='history'){const input=document.getElementById('historyDate');if(input&&!input.value)input.value=key();renderHistory();}
+}
+function totals(){return state.days[key()].reduce((a,x)=>({cal:a.cal+x.cal,pro:a.pro+x.pro,carb:a.carb+x.carb,fat:a.fat+x.fat}),{cal:0,pro:0,carb:0,fat:0})}
+function pct(v,t){return Math.min(100,Math.round(v/t*100))}
+function fmt(n){return Math.round(n*10)/10}
+function render(){
+ document.getElementById('today').textContent=new Date().toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'short',year:'numeric'});
+ let t=totals(),tar=state.targets;
+ document.getElementById('stats').innerHTML=[
+ ['Calories',t.cal,tar.cal,'kcal'],['Protein',t.pro,tar.pro,'g'],['Carbs',t.carb,tar.carb,'g'],['Fat',t.fat,tar.fat,'g']
+ ].map(x=>`<div class="card stat"><span class="label">${x[0]}</span><b>${fmt(x[1])} <small>${x[3]}</small></b><div class="small">Target ${x[2]} ${x[3]}</div></div>`).join('');
+ document.getElementById('progress').innerHTML=[
+ ['Calories',t.cal,tar.cal,'kcal'],['Protein',t.pro,tar.pro,'g'],['Carbs',t.carb,tar.carb,'g'],['Fat',t.fat,tar.fat,'g']
+ ].map(x=>`<div style="margin:13px 0"><div style="display:flex;justify-content:space-between"><span>${x[0]}</span><span class="${x[1]>=x[2]?'good':''}">${fmt(x[1])} / ${x[2]} ${x[3]}</span></div><div class="progress"><div class="bar ${x[1]>x[2]*1.1?'over':''}" style="width:${pct(x[1],x[2])}%"></div></div></div>`).join('');
+ let items=state.days[key()];
+ document.getElementById('log').innerHTML=items.length?`
+ <div class="food-log-table">
+   <div class="food-log-head"><span>Food</span><span>Qty</span><span>Calories</span><span>Protein</span><span>Carbs</span><span>Fat</span><span></span></div>
+   ${items.map((x,i)=>`
+   <div class="food-log-row">
+     <strong>${x.name}</strong>
+     <span>${x.qty} ${x.unit||'g'}</span>
+     <span>${fmt(x.cal)} kcal</span>
+     <span>${fmt(x.pro)} g</span>
+     <span>${fmt(x.carb)} g</span>
+     <span>${fmt(x.fat)} g</span>
+     <button class="btn danger" aria-label="Remove ${x.name}" onclick="removeFood(${i})">×</button>
+   </div>`).join('')}
+ </div>`:`<div class="empty">No food logged yet.<br><button class="btn primary" style="margin-top:12px" onclick="goToAddFood()">+ Add Food</button></div>`;
+}
+function populate(){
+ document.getElementById('tCal').value=state.targets.cal;document.getElementById('tPro').value=state.targets.pro;document.getElementById('tCarb').value=state.targets.carb;document.getElementById('tFat').value=state.targets.fat;
+ ['tCal','tPro','tCarb','tFat'].forEach(id=>document.getElementById(id).setAttribute('readonly','readonly'));
+ document.getElementById('targetStatus').style.display='none';
+ document.getElementById('editTargetsBtn').disabled=false;
+ document.getElementById('editTargetsBtn').textContent='Edit';
+ document.getElementById('targetStatus').style.display='none';
+}
+let remoteFoodResults=[];
+let searchTimer=0;
+let searchRequestId=0;
+
+function escapeHtml(v){
+ return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function showFoodResults(results,status=''){
+ const box=document.getElementById('foodResults');
+ const unique=[];
+ const seen=new Set();
+ results.forEach(r=>{
+   const key=(r.name||'').toLowerCase();
+   if(key && !seen.has(key)){seen.add(key);unique.push(r)}
+ });
+ box.innerHTML=unique.length ? unique.slice(0,14).map((r,i)=>{
+   const f=r.nutrition;
+   const source=r.source==='internet'?'Internet food database':'MacroTrack database';
+   return `<div class="food-result" onclick="selectFoodResult(${i})">
+     <strong>${escapeHtml(r.name)}</strong>
+     <span>${fmt(f.cal)} kcal · ${fmt(f.pro)}g protein · ${fmt(f.carb)}g carbs · ${fmt(f.fat)}g fat / 100g · ${source}</span>
+   </div>`;
+ }).join('') : `<div class="food-result"><span>No matching food found. Try another spelling.</span></div>`;
+ box.style.display='block';
+ window.__foodResults=unique.slice(0,14);
+ document.getElementById('foodSearchStatus').textContent=status;
+}
+
+function searchFoods(){
+ clearTimeout(searchTimer);
+ const input=document.getElementById('foodSearch');
+ const q=input.value.trim();
+ document.getElementById('foodSelect').value='';
+ document.getElementById('selectedFood').textContent='';
+ if(!q){
+   document.getElementById('foodResults').style.display='none';
+   document.getElementById('foodSearchStatus').textContent='';
+   return;
+ }
+ // Show local matches immediately.
+ const nq=normalized(q), terms=nq.split(" ").filter(Boolean);
+ const local=Object.keys(foods).map(name=>{
+   const aliasesFor=foodSearchIndex[name]||[];
+   let score=0;
+   aliasesFor.forEach(a=>{
+     if(a===nq) score=Math.max(score,100);
+     else if(a.startsWith(nq)) score=Math.max(score,85);
+     else if(a.includes(nq)) score=Math.max(score,70);
+     else if(terms.every(t=>a.includes(t))) score=Math.max(score,60);
+     else if(nq.length>=4){
+       const hits=nq.split("").filter(c=>a.includes(c)).length;
+       if(hits/nq.length>=.75) score=Math.max(score,35);
+     }
+   });
+   return {name,score};
+ }).filter(x=>x.score>0).sort((a,b)=>b.score-a.score).slice(0,8);
+
+ const localResults=local.map(x=>({name:x.name,nutrition:foods[x.name],source:'local'}));
+ showFoodResults(localResults,'Searching the internet for more foods…');
+
+ const requestId=++searchRequestId;
+ searchTimer=setTimeout(()=>searchInternetFoods(q,requestId),250);
+}
+
+async function searchInternetFoods(q,requestId){
+ const results=[];
+ try{
+   // USDA FoodData Central gives generic foods plus branded/packaged foods.
+   const url='https://api.nal.usda.gov/fdc/v1/foods/search?api_key=DEMO_KEY&query='+encodeURIComponent(q)+'&pageSize=20';
+   const res=await fetch(url,{headers:{Accept:'application/json'}});
+   if(res.ok){
+     const data=await res.json();
+     (data.foods||[]).forEach(f=>{
+       const n=f.foodNutrients||[];
+       const get=(id)=>Number((n.find(x=>x.nutrientId===id)||{}).value)||0;
+       const nutrition={
+         cal:get(1008),
+         pro:get(1003),
+         carb:get(1005),
+         fat:get(1004)
+       };
+       if(nutrition.cal||nutrition.pro||nutrition.carb||nutrition.fat){
+         results.push({name:f.description,nutrition,source:'internet'});
+       }
+     });
+   }
+ }catch(e){}
+ if(requestId!==searchRequestId)return;
+
+ // Open Food Facts adds many packaged foods worldwide.
+ try{
+   const url='https://world.openfoodfacts.org/cgi/search.pl?search_terms='+encodeURIComponent(q)+'&search_simple=1&action=process&json=1&page_size=20&fields=product_name,nutriments';
+   const res=await fetch(url,{headers:{Accept:'application/json'}});
+   if(res.ok){
+     const data=await res.json();
+     (data.products||[]).forEach(f=>{
+       const name=(f.product_name||'').trim();
+       const n=f.nutriments||{};
+       const nutrition={
+         cal:Number(n['energy-kcal_100g'])||Number(n['energy-kcal'])||0,
+         pro:Number(n.proteins_100g)||0,
+         carb:Number(n.carbohydrates_100g)||0,
+         fat:Number(n.fat_100g)||0
+       };
+       if(name && (nutrition.cal||nutrition.pro||nutrition.carb||nutrition.fat))
+         results.push({name,nutrition,source:'internet'});
+     });
+   }
+ }catch(e){}
+
+ if(requestId!==searchRequestId)return;
+ remoteFoodResults=results;
+ const nq=normalized(q);
+ const localNow=Object.keys(foods).map(name=>({name,nutrition:foods[name],source:'local'}))
+   .filter(r=>normalized(r.name).includes(nq));
+ showFoodResults([...localNow,...results],results.length?'Internet results included':'No internet result; showing local matches.');
+}
+
+function selectFoodResult(index){
+ const r=(window.__foodResults||[])[index];
+ if(!r)return;
+ document.getElementById('foodSelect').value=r.name;
+ document.getElementById('foodSearch').value=r.name;
+ document.getElementById('selectedFood').textContent='Selected: '+r.name;
+ document.getElementById('foodResults').style.display='none';
+ document.getElementById('foodSearchStatus').textContent=r.source==='internet'
+   ? 'Selected from internet food database ✓'
+   : 'Selected ✓';
+
+ // Store the exact nutrition attached to the result. This prevents the typed
+ // name from accidentally using another food's nutrition.
+ window.__selectedFoodData={name:r.name,nutrition:r.nutrition,source:r.source};
+ document.getElementById('unit').value='g';
+}
+
+function selectFood(name){
+ // Backward-compatible local selector.
+ const f=foods[name];
+ if(f) selectFoodResult((window.__foodResults||[]).push({name,nutrition:f,source:'local'})-1);
+}
+
+document.addEventListener('click',e=>{
+ const area=document.querySelector('#foodSearch')?.parentElement;
+ if(area && !area.contains(e.target)){
+   document.getElementById('foodResults').style.display='none';
+ }
+});
+function addFood(){
+ const name=document.getElementById('foodSelect').value;
+ const q=Number(document.getElementById('qty').value)||0;
+ const unit=document.getElementById('unit').value;
+ const selected=window.__selectedFoodData;
+ if(!name || !selected || selected.name!==name){
+   document.getElementById('selectedFood').textContent='Please tap the exact food result first.';
+   searchFoods();
+   return;
+ }
+ if(q<=0)return;
+
+ const f=selected.nutrition;
+ let n={cal:f.cal,pro:f.pro,carb:f.carb,fat:f.fat};
+ // Piece values exist only for foods in the built-in database.
+ if(unit==='piece'){
+   const local=foods[name];
+   if(local && local.piece) n=local.piece;
+   else{
+     document.getElementById('selectedFood').textContent='Piece is not available for this internet food. Use grams or ml.';
+     return;
+   }
+ }
+ const k=(unit==='piece' && foods[name]?.piece)?q:q/100;
+ state.days[key()].push({name,qty:q,unit,cal:n.cal*k,pro:n.pro*k,carb:n.carb*k,fat:n.fat*k});
+ save();render();renderHistory();
+ document.getElementById('qty').value=100;
+ document.getElementById('foodSearch').value='';
+ document.getElementById('foodSelect').value='';
+ document.getElementById('selectedFood').textContent='';
+ document.getElementById('foodResults').style.display='none';
+ window.__selectedFoodData=null;
+ const msg=document.getElementById('addFoodMessage');
+ if(msg){msg.textContent=`Added ✓ ${name} (${q} ${unit})`;setTimeout(()=>{msg.textContent=''},1800);}
+}
+function addCustom(){
+ const name=document.getElementById('cName').value.trim(); if(!name)return alert('Enter a food name.');
+ const q=Number(document.getElementById('cQty').value)||0, k=q/100;
+ const cal=Number(document.getElementById('cCal').value)||0,pro=Number(document.getElementById('cPro').value)||0,carb=Number(document.getElementById('cCarb').value)||0,fat=Number(document.getElementById('cFat').value)||0;
+ state.days[key()].push({name,qty:q,cal:cal*k,pro:pro*k,carb:carb*k,fat:fat*k});save();render();
+ ['cName','cCal','cPro','cCarb','cFat'].forEach(id=>document.getElementById(id).value='');
+}
+function removeFood(i){state.days[key()].splice(i,1);save();render();renderHistory()}
+function editTargets(){
+ ['tCal','tPro','tCarb','tFat'].forEach(id=>{
+   const el=document.getElementById(id);
+   el.readOnly=false;
+   el.removeAttribute('readonly');
+ });
+ document.getElementById('targetStatus').style.display='none';
+ document.getElementById('saveTargetsBtn').disabled=false;
+ document.getElementById('editTargetsBtn').textContent='Editing…';
+ document.getElementById('editTargetsBtn').disabled=true;
+
+ // Put the cursor directly in the first target field.
+ const first=document.getElementById('tCal');
+ first.focus();
+ first.select();
+}
+function saveTargets(){
+ const tCalEl=document.getElementById('tCal');
+ const tProEl=document.getElementById('tPro');
+ const tCarbEl=document.getElementById('tCarb');
+ const tFatEl=document.getElementById('tFat');
+ state.targets={
+   cal:Number(tCalEl.value)||0,
+   pro:Number(tProEl.value)||0,
+   carb:Number(tCarbEl.value)||0,
+   fat:Number(tFatEl.value)||0
+ };
+ // Save the target as the target for today's date. Other dates keep
+ // their own stored target and will not change when today's target changes.
+ state.dayTargets[key()]=cloneTarget(state.targets);
+ [tCalEl,tProEl,tCarbEl,tFatEl].forEach(el=>{el.readOnly=true;el.setAttribute('readonly','readonly')});
+ save();render();renderHistory();
+ const status=document.getElementById('targetStatus');
+ status.textContent='Saved ✓';
+ status.style.display='inline-block';
+ const edit=document.getElementById('editTargetsBtn');
+ edit.textContent='Edit';
+ edit.disabled=false;
+}
+function openHistory(){
+  const tab=[...document.querySelectorAll('.tab')].find(x=>x.textContent.trim()==='History');
+  if(tab) showTab('history',tab);
+  const input=document.getElementById('historyDate');
+  if(input && !input.value) input.value=key();
+  renderHistory();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderHistory(){
+ const selectedDate=document.getElementById('historyDate')?.value||key();
+ const metric=document.getElementById('historyMetric')?.value||'cal';
+ const dayTarget=getTargetForDate(selectedDate);
+ const targetUnavailable=!dayTarget;
+ const target=dayTarget||cloneTarget(state.targets);
+ const meta={
+   cal:{label:'Calories',unit:'kcal',target:Number(target.cal)||0},
+   pro:{label:'Protein',unit:'g',target:Number(target.pro)||0},
+   carb:{label:'Carbohydrates',unit:'g',target:Number(target.carb)||0},
+   fat:{label:'Fat',unit:'g',target:Number(target.fat)||0}
+ }[metric];
+
+ const items=Array.isArray(state.days[selectedDate])?state.days[selectedDate]:[];
+ const actuals=items.reduce((a,x)=>({
+   cal:a.cal+(Number(x.cal)||0),
+   pro:a.pro+(Number(x.pro)||0),
+   carb:a.carb+(Number(x.carb)||0),
+   fat:a.fat+(Number(x.fat)||0)
+ }),{cal:0,pro:0,carb:0,fat:0});
+
+ const actual=Number(actuals[metric])||0;
+ const diff=actual-meta.target;
+ const reached=actual>=meta.target;
+ const percent=meta.target>0?Math.round(actual/meta.target*100):0;
+
+ const titleDate=new Date(selectedDate+'T00:00:00');
+ const title=Number.isNaN(titleDate.getTime())?selectedDate:titleDate.toLocaleDateString(undefined,{weekday:'long',day:'numeric',month:'long',year:'numeric'});
+ document.getElementById('selectedDayTitle').innerHTML='Showing intake and results for '+title+
+   (targetUnavailable?' <span class="small">• Target for this date was not saved in the older data</span>':' <span class="small">• Using this day\'s saved target</span>');
+
+ drawChart([[selectedDate,items]],metric,meta);
+
+ document.getElementById('historyTable').innerHTML=`
+   <div class="compare-grid">
+     <div class="compare-card"><span class="compare-title">Actual</span><b>${fmt(actual)} ${meta.unit}</b><span class="compare-diff">Consumed on selected date</span></div>
+     <div class="compare-card"><span class="compare-title">Target</span><b>${fmt(meta.target)} ${meta.unit}</b><span class="compare-diff">Daily goal</span></div>
+     <div class="compare-card"><span class="compare-title">${reached?'Over target':'Remaining'}</span><b>${fmt(Math.abs(diff))} ${meta.unit}</b><span class="compare-diff">${reached?'Above goal':'Still needed'}</span></div>
+     <div class="compare-card"><span class="compare-title">Progress</span><b>${percent}%</b><span class="compare-diff">${reached?'Target reached':'of daily target'}</span></div>
+   </div>`;
+
+ document.getElementById('selectedDayLog').innerHTML=`
+   <h3>Food intake</h3>
+   ${items.length?`
+   <div class="food-log-table">
+     <div class="food-log-head"><span>Food</span><span>Qty</span><span>Calories</span><span>Protein</span><span>Carbs</span><span>Fat</span><span></span></div>
+     ${items.map(x=>`
+     <div class="food-log-row">
+       <strong>${escapeHtml(x.name)}</strong>
+       <span>${x.qty} ${x.unit||'g'}</span>
+       <span>${fmt(x.cal)} kcal</span>
+       <span>${fmt(x.pro)} g</span>
+       <span>${fmt(x.carb)} g</span>
+       <span>${fmt(x.fat)} g</span>
+       <span></span>
+     </div>`).join('')}
+   </div>`:`<div class="selected-day-empty">No food was logged on this date.</div>`}
+ `;
+}
+
+function drawChart(entries,metric,meta){
+ const c=document.getElementById('chart');
+ if(!c)return;
+ const rect=c.getBoundingClientRect();
+ const cssW=Math.max(320,Math.floor(rect.width||900));
+ const cssH=300;
+ const dpr=window.devicePixelRatio||1;
+ c.width=Math.floor(cssW*dpr);
+ c.height=Math.floor(cssH*dpr);
+ const ctx=c.getContext('2d');
+ ctx.setTransform(dpr,0,0,dpr,0,0);
+ const w=cssW,h=cssH;
+ ctx.clearRect(0,0,w,h);
+
+ const vals=entries.map(([d,a])=>a.reduce((sum,x)=>sum+(Number(x[metric])||0),0));
+ const target=Math.max(0,Number(meta.target)||0);
+ const max=Math.max(target,...vals,1)*1.18;
+ const left=58,right=18,top=22,bottom=42;
+ const plotW=w-left-right,plotH=h-top-bottom;
+
+ // Grid + y-axis labels.
+ ctx.font='12px system-ui';
+ ctx.textAlign='right';
+ ctx.textBaseline='middle';
+ ctx.lineWidth=1;
+ ctx.strokeStyle='#303641';
+ ctx.fillStyle='#9aa4b2';
+ for(let i=0;i<5;i++){
+   const ratio=i/4;
+   const y=top+plotH*ratio;
+   const value=max*(1-ratio);
+   ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
+   ctx.fillText(fmt(value),left-9,y);
+ }
+
+ // Empty state: still show the target line.
+ if(!entries.length){
+   const y=top+plotH-(target/max)*plotH;
+   ctx.save();
+   ctx.setLineDash([7,6]);
+   ctx.strokeStyle='#5aa9ff';
+   ctx.lineWidth=2.5;
+   ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
+   ctx.restore();
+   return;
+ }
+
+ const xAt=i=>entries.length===1?left+plotW/2:left+(i/(entries.length-1))*plotW;
+ const yAt=v=>top+plotH-(Math.max(0,v)/max)*plotH;
+
+ // ACTUAL line.
+ // With one day of data, show a full-width green dashed line (no isolated dot).
+ // With multiple days, show the actual trend line and points.
+ ctx.save();
+ ctx.strokeStyle='#65d68a';
+ ctx.lineWidth=2.5;
+ ctx.lineJoin='round';
+ ctx.lineCap='round';
+ if(vals.length===1){
+   ctx.setLineDash([8,6]);
+   const y=yAt(vals[0]);
+   ctx.beginPath();ctx.moveTo(left,y);ctx.lineTo(w-right,y);ctx.stroke();
+ }else{
+   ctx.setLineDash([]);
+   ctx.lineWidth=4;
+   ctx.beginPath();
+   vals.forEach((v,i)=>{const x=xAt(i),y=yAt(v);i?ctx.lineTo(x,y):ctx.moveTo(x,y)});
+   ctx.stroke();
+
+   ctx.fillStyle='#65d68a';
+   vals.forEach((v,i)=>{
+     const x=xAt(i),y=yAt(v);
+     ctx.beginPath();ctx.arc(x,y,5,0,Math.PI*2);ctx.fill();
+   });
+ }
+ ctx.restore();
+
+ // TARGET line: dashed and independent of actual.
+ const ty=yAt(target);
+ ctx.save();
+ ctx.setLineDash([8,6]);
+ ctx.strokeStyle='#5aa9ff';
+ ctx.lineWidth=2.5;
+ ctx.beginPath();ctx.moveTo(left,ty);ctx.lineTo(w-right,ty);ctx.stroke();
+ ctx.restore();
+
+ // Date labels.
+ ctx.fillStyle='#9aa4b2';
+ ctx.font='11px system-ui';
+ ctx.textAlign='center';
+ ctx.textBaseline='alphabetic';
+ entries.forEach(([d],i)=>{
+   const label=d.slice(5);
+   ctx.fillText(label,xAt(i),h-12);
+ });
+
+ // End labels make it obvious which line is which.
+ const lastX=xAt(vals.length-1);
+ const lastY=yAt(vals[vals.length-1]);
+ ctx.font='bold 11px system-ui';
+ ctx.textAlign='left';
+ ctx.fillStyle='#65d68a';
+ ctx.fillText(`Actual ${fmt(vals[vals.length-1])}`,Math.min(lastX+8,w-115),Math.max(top+12,Math.min(lastY-8,h-bottom-4)));
+
+ ctx.fillStyle='#5aa9ff';
+ ctx.fillText(`Target ${fmt(target)}`,left+6,Math.max(top+12,Math.min(ty-8,h-bottom-4)));
+}
+populate();render();document.getElementById('historyDate').value=key();
+</script>
+</body>
+</html>
