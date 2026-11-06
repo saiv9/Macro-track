@@ -70,6 +70,24 @@ input,select{width:100%;padding:11px 12px;background:var(--card2);border:1px sol
   .history-details{margin-top:12px}
 }
 </style>
+ <script>
+(function () {
+  const url = new URL(window.location.href);
+
+  if (url.searchParams.has("utm_source")) {
+    url.searchParams.delete("utm_source");
+
+    const cleanUrl =
+      url.pathname +
+      (url.searchParams.toString()
+        ? "?" + url.searchParams.toString()
+        : "") +
+      url.hash;
+
+    history.replaceState(null, "", cleanUrl);
+  }
+})();
+ </script>
 </head>
 <body>
 <div class="container">
